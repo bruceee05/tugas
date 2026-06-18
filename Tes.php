@@ -22,18 +22,39 @@ echo "=========================================\n";
 
 echo "\n";
 
+// Minta uang terlebih dahulu
+echo "Masukkan Uang Tunai (Rp): ";
+$uang = intval(trim(fgets(STDIN)));
+
+// Pilih jenis BBM
 echo "Pilihan BBM (1-4): ";
 $pilihan = intval(trim(fgets(STDIN)));
 
 if (!isset($daftar_bbm[$pilihan])) {
     echo "\n❌ MAAF, NOMOR BBM TIDAK TERSEDIA!\n";
-    exit; 
+    exit;
 }
 
-echo "Masukkan Nominal Uang (Rp): ";
-$uang = intval(trim(fgets(STDIN))); 
+// Minta nominal pembelian (Rp) dan pastikan tidak melebihi uang
+while (true) {
+    echo "Mau beli berapa (Rp)? ";
+    $nominal = intval(trim(fgets(STDIN)));
 
-$liter_didapat = round($uang / $daftar_bbm[$pilihan]['harga'], 2);
+    if ($nominal <= 0) {
+        echo "Masukkan nominal yang valid.\n";
+        continue;
+    }
+
+    if ($nominal > $uang) {
+        echo "\n❌ UANG TIDAK CUKUP. Saldo Anda: Rp " . number_format($uang, 0, ',', '.') . "\n";
+        echo "Silakan masukkan nominal yang lebih kecil.\n";
+        continue;
+    }
+
+    $liter_didapat = round($nominal / $daftar_bbm[$pilihan]['harga'], 4);
+    $uang_terpakai = $nominal;
+    break;
+}
 
 echo "\n=========================================\n";
 echo "             STRUK NOTA BBM              \n";
@@ -41,7 +62,11 @@ echo "=========================================\n";
 echo "BBM Pilihan    : " . $daftar_bbm[$pilihan]['nama'] . "\n";
 echo "Harga / Liter  : Rp " . number_format($daftar_bbm[$pilihan]['harga'], 0, ',', '.') . "\n";
 echo "-----------------------------------------\n";
-echo "Uang Bayar     : Rp " . number_format($uang, 0, ',', '.') . "\n";
+echo "Uang Bayar     : Rp " . number_format($uang_terpakai, 0, ',', '.') . "\n";
 echo "Bensin Didapat : " . $liter_didapat . " Liter\n"; 
 echo "=========================================\n";
+
+$kembalian = $uang - $uang_terpakai;
+echo "Uang Diterima  : Rp " . number_format($uang, 0, ',', '.') . "\n";
+echo "Kembalian       : Rp " . number_format($kembalian, 0, ',', '.') . "\n";
 ?>

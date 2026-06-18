@@ -22,29 +22,45 @@ echo "=========================================\n";
 
 echo "\n";
 
-// Minta uang terlebih dahulu
-echo "Masukkan Uang Tunai (Rp): ";
-$uang = intval(trim(fgets(STDIN)));
+// Input uang tunai, validasi hanya angka
+while (true) {
+    echo "Masukkan Uang Tunai (Rp): ";
+    $input_uang = trim(fgets(STDIN));
 
-// Pilih jenis BBM
-echo "Pilihan BBM (1-4): ";
-$pilihan = intval(trim(fgets(STDIN)));
+    if ($input_uang === '' || !ctype_digit($input_uang) || intval($input_uang) <= 0) {
+        echo "Input tidak valid. Masukkan angka bulat positif saja.\n";
+        continue;
+    }
 
-if (!isset($daftar_bbm[$pilihan])) {
-    echo "\n❌ MAAF, NOMOR BBM TIDAK TERSEDIA!\n";
-    exit;
+    $uang = intval($input_uang);
+    break;
+}
+
+// Pilih jenis BBM dengan validasi input
+while (true) {
+    echo "Pilihan BBM (1-4): ";
+    $input_pilihan = trim(fgets(STDIN));
+
+    if ($input_pilihan === '' || !ctype_digit($input_pilihan) || !isset($daftar_bbm[intval($input_pilihan)])) {
+        echo "\n❌ MAAF, NOMOR BBM TIDAK TERSEDIA! Silakan pilih angka 1 sampai 4.\n";
+        continue;
+    }
+
+    $pilihan = intval($input_pilihan);
+    break;
 }
 
 // Minta nominal pembelian (Rp) dan pastikan tidak melebihi uang
 while (true) {
     echo "Mau beli berapa (Rp)? ";
-    $nominal = intval(trim(fgets(STDIN)));
+    $input_nominal = trim(fgets(STDIN));
 
-    if ($nominal <= 0) {
+    if ($input_nominal === '' || !ctype_digit($input_nominal) || intval($input_nominal) <= 0) {
         echo "Masukkan nominal yang valid.\n";
         continue;
     }
 
+    $nominal = intval($input_nominal);
     if ($nominal > $uang) {
         echo "\n❌ UANG TIDAK CUKUP. Saldo Anda: Rp " . number_format($uang, 0, ',', '.') . "\n";
         echo "Silakan masukkan nominal yang lebih kecil.\n";

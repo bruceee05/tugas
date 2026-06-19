@@ -26,9 +26,34 @@ foreach ($daftar_menu as $nomor => $menu) {
 }
 echo "=========================================\n";
 
-echo "Masukkan Nama Customer: ";
-// fgets buat buka gerbang input keyboard, trim() buat ngebabat "enter gaib" (\n) pas kasir pencet enter
-$nama_customer = trim(fgets(STDIN));
+// ===================================================================
+// PROSES INPUT NAMA CUSTOMER (ANTI-ANGKA & ANTI-KOSONG)
+// ===================================================================
+while (true) {
+    echo "Masukkan Nama Customer: ";
+    // PENJELASAN fgets() & STDIN: fgets() itu fungsinya buat ngebuka gerbang input keyboard di terminal. 
+    // STDIN (Standard Input) adalah tujuannya, yaitu ngebaca apa pun yang lo ketik di keyboard saat program jalan.
+    // PENJELASAN trim(): Pas lo beres ngetik nama terus pencet "Enter", komputer bakal ngebaca tombol Enter itu sebagai karakter gaib (\n).
+    // Fungsi trim() ini gunanya buat ngebabat habis spasi liar di ujung teks dan ngebuang "Enter gaib" itu biar teksnya bersih murni.
+    $input_nama = trim(fgets(STDIN));
+
+    // PENJELASAN str_replace(): Menghapus spasi sementara agar ctype_alpha tidak menganggap spasi sebagai karakter haram. 
+    // Isiannya: str_replace('yang dicari', 'diganti apa', 'di variabel mana'). Di sini spasi diganti string kosong ('').
+    $cek_nama = str_replace(' ', '', $input_nama);
+
+    // PENJELASAN Operator === (Identik/Sama Persis): Berbeda dengan == biasa, === ini ngeceknya ketat banget. 
+    // Dia memastikan nilainya sama DAN tipe datanya juga harus sama (misal string sama-sama string).
+    // Di sini $input_nama === '' artinya ngecek apakah kasir langsung asal pencet Enter (isinya string kosong murni).
+    // PENJELASAN ctype_alpha() & tanda !: ctype_alpha buat mastiin teks murni huruf A-Z / a-z. 
+    // Tanda ! artinya "TIDAK". Jadi dibaca: "Jika input nama kosong ATAU cek_nama BUKAN huruf murni", maka error.
+    if ($input_nama === '' || !ctype_alpha($cek_nama)) {
+        echo "❌ ERROR: Nama customer harus berupa huruf saja (Tanpa angka / simbol)!\n\n";
+        continue; 
+    }
+
+    $nama_customer = $input_nama;
+    break; 
+}
 
 $keranjang = [];
 
@@ -36,59 +61,70 @@ $keranjang = [];
 // PROSES BELANJA (PERULANGAN UTAMA)
 // ===================================================================
 while (true) {
-    // Loop menu utama + filter biar ga crash kalau kasir iseng enter kosong atau ngetik huruf
+    
+    // Loop kecil 1: Mengunci validasi pemilihan nomor menu
     while (true) {
         echo "\nPilih Nomor Menu (1-3): ";
         $input_pilihan = trim(fgets(STDIN));
 
-        // '' (String Kosong) di sini buat ngecek apakah kasir langsung asal pencet Enter tanpa ngetik angka
+        // PENJELASAN isset(): Mengecek apakah nomor laci array di $daftar_menu itu beneran ada atau gak isinya. 
+        // Jadi kalau kasir iseng ketik angka 5, program gak akan crash karena !isset bakal mendeteksi kalau laci nomor 5 itu kosong.
         if ($input_pilihan === '' || !ctype_digit($input_pilihan) || !isset($daftar_menu[intval($input_pilihan)])) {
             echo "❌ MAAF, NOMOR MENU TIDAK ADA! Silakan pilih angka 1 sampai 3.\n";
-            continue; // Mengulang pertanyaan pilih menu saja
+            continue; 
         }
 
-        // intval mengubah teks inputan keyboard menjadi angka murni agar bisa dibaca laci array
+        // PENJELASAN intval(): Mengubah teks inputan keyboard ("string") menjadi angka murni ("integer") agar bisa dibaca oleh sistem laci array PHP.
         $pilihan = intval($input_pilihan);
-        break; // Keluar dari loop filter menu, lanjut ke jumlah beli
+        break; 
     }
 
-    echo "Jumlah Beli: ";
-    // Nested Loop (Loop bersarang): Khusus mengunci dan mengisolasi error di jumlah beli aja
+    // Loop kecil 2: Mengunci validasi jumlah beli (anti-huruf, anti-nol/minus)
     while (true) {
-        echo "Jumlah Beli (pcs/bungkus - masukkan angka): ";
+        echo "Jumlah Beli (pcs/bungkus): ";
         $input_jumlah = trim(fgets(STDIN));
 
-        // Pengecekan ketat: Apakah langsung di-Enter kosong ('') ATAU bukan angka ATAU angkanya 0/minus
         if ($input_jumlah === '' || !ctype_digit($input_jumlah) || intval($input_jumlah) <= 0) {
-            echo "Input jumlah tidak valid. Masukkan angka bulat positif saja.\n";
-            continue; // Mengulang pertanyaan jumlah beli saja
+            echo "❌ Input jumlah tidak valid. Masukkan angka bulat positif saja (Min. 1).\n\n";
+            continue; 
         }
 
         $jumlah = intval($input_jumlah);
-        break; // Matikan loop jumlah beli, lanjut masukkan ke keranjang
+        break; 
     }
 
-    // ===================================================================
-    // PROSES MEMASUKKAN BARANG KE KERANJANG (PUSH DATA ARRAY)
-    // ===================================================================
-    // Tanda [] artinya tumpuk/tambahkan data baru ini ke baris paling bawah di laci $keranjang.
-    // Di dalamnya kita bikin stiker label ('nama', 'harga', dll) agar datanya terkelompok rapi.
+    // PENJELASAN array [] (Push Data): Tanda [] kosong setelah variabel artinya menumpuk data baru ke baris paling bawah laci $keranjang. 
+    // Di dalamnya kita bikin stiker label ('nama', 'harga', dll) biar datanya terkelompok rapi dan tidak saling menimpa.
     $keranjang[] = [
         'nama'     => $daftar_menu[$pilihan]['nama'],
         'harga'    => $daftar_menu[$pilihan]['harga'],
         'qty'      => $jumlah,
-        'subtotal' => $daftar_menu[$pilihan]['harga'] * $jumlah // Otomatis mengalikan harga dengan jumlah beli
+        'subtotal' => $daftar_menu[$pilihan]['harga'] * $jumlah 
     ];
 
-    echo "Mau tambah menu lain? (y/n): ";
-    // strtolower buat otomatis ngubah huruf kapital (Y besar) jadi kecil (y kecil) biar ga eror
-    $tanya = strtolower(trim(fgets(STDIN)));
+    // 🎯 KUNCI MATI PERTANYAAN LO DI SINI (LOOP KECIL 3)
+    while (true) {
+        echo "Mau tambah menu lain? (y/n): ";
+        // PENJELASAN strtolower(): Mengubah otomatis huruf kapital (Y besar) jadi huruf kecil (y kecil). 
+        $tanya = strtolower(trim(fgets(STDIN)));
 
-    // Operator !== buat cek ketat nilai & tipe data. Kalau kasir ga ngetik 'y', stop belanja
-    if ($tanya !== 'y') {
-        break; // break cuma menghentikan perulangan belanja, kode cetak struk di bawah tetap jalan
+        // PENJELASAN in_array(): Fungsi untuk mengecek apakah sebuah teks ada di dalam daftar list array.
+        // Di sini kita bikin list array kata suci bbm murni yaitu ['y', 'n']. 
+        // Tanda ! artinya "TIDAK ADA". Jadi dibaca: "Jika inputan kasir BUKAN huruf y dan BUKAN huruf n..." maka ditolak mentah-mentah!
+        if (!in_array($tanya, ['y', 'n'])) {
+            echo "❌ INPUT SALAH! Cuma boleh ketik huruf 'y' (untuk tambah) atau 'n' (untuk selesai).\n\n";
+            continue; // Memaksa kasir mengulang ketik jawaban (y/n) yang bener
+        }
+
+        break; // Jawaban bener (kalau gak 'y' pasti 'n'), keluar dari loop kecil pertanyaan
     }
 
+    // Setelah lolos filter di atas, baru kita cek: Kalau kasir ngetik 'n', saatnya beneran break/berhenti belanja
+    if ($tanya === 'n') {
+        break; // Keluar dari loop belanja utama, lanjut hitung struk pembayran
+    }
+
+    // Menampilkan kembali papan menu agar kasir tidak usah scroll layar ke atas
     echo "\n=========================================\n";
     echo "              DAFTAR MENU                \n";
     echo "=========================================\n";
@@ -101,61 +137,66 @@ while (true) {
 }
 
 // ===================================================================
-// HITUNG TOTAL BELANJAAN
+// HITUNG TOTAL BELANJAAN (AKUMULASI)
 // ===================================================================
 $grand_total = 0;
-// kata kunci 'as' di sini bertugas memecah array $keranjang dan mengambil isinya satu per satu untuk dinamai alias $item
+// PENJELASAN foreach & kata kunci 'as': Membongkar isi laci array $keranjang yang banyak, 
+// diambil satu per satu dari baris teratas, lalu baris tersebut dinamai alias sebagai variabel tunggal $item.
 foreach ($keranjang as $item) {
-    $grand_total += $item['subtotal']; // Estafet penjumlahan subtotal ke grand_total
+    // PENJELASAN Operator += (Penjumlahan Estafet): Daripada nulis $grand_total = $grand_total + $item['subtotal'], 
+    // disingkat pakai += biar keren khas anak RPL. Isinya bakal terus ditambahin numpuk ke nilai $grand_total sebelumnya.
+    $grand_total += $item['subtotal']; 
 }
 
 echo "\n-----------------------------------------\n";
 echo "TOTAL YANG HARUS DIBAYAR: Rp " . number_format($grand_total, 0, ',', '.') . "\n";
+echo "-----------------------------------------\n";
 
 // ===================================================================
-// VALIDASI UANG BAYAR (ANTI KARAKTER ANEH & ANTI KOSONG)
+// PROSES INPUT UANG BAYAR & VALIDASI KECUKUPAN
 // ===================================================================
 while (true) {
     echo "Masukkan Uang Bayar (Rp): ";
     $input_bayar = trim(fgets(STDIN));
 
-    // Filter ketat: Menolak enter kosong (''), menolak karakter aneh/huruf (!ctype_digit), dan menolak nominal minus
+    // Filter: Anti-kosong, anti-huruf, dan anti-minus
     if ($input_bayar === '' || !ctype_digit($input_bayar) || intval($input_bayar) <= 0) {
-        echo "❌ Input salah! Mohon masukkan angka bulat saja (Tanpa huruf, spasi, atau simbol).\n\n";
-        continue; // Memaksa kasir mengulang ketik uang bayar yang benar
+        echo "❌ Input salah! Mohon masukkan angka bulat saja (Tanpa huruf / simbol).\n\n";
+        continue; 
     }
 
     $uang_bayar = intval($input_bayar);
-    break; // Lolos sensor, lanjut ke pengecekan kecukupan uang
+
+    // Cek apakah uangnya kurang dari total belanja
+    if ($uang_bayar < $grand_total) {
+        echo "❌ MAAF, UANG ANDA KURANG! Total tagihan adalah Rp " . number_format($grand_total, 0, ',', '.') . "\n";
+        echo "Silakan masukkan uang bayar yang cukup.\n\n";
+        continue; // Mengulang input uang, program tidak mati bawaan (Sistem POS)
+    }
+
+    break; 
 }
 
-// Validasi apakah uangnya cukup atau kurang
-if ($uang_bayar < $grand_total) {
-    echo "\n❌ MAAF, UANG ANDA KURANG! Transaksi dibatalkan.\n";
-    exit; // exit langsung mematikan total seluruh program detik ini juga biar struk toko ga kecetak
-}
-
-// Rumus matematika pengurangan untuk mencari uang kembalian
+// Menghitung sisa uang kembalian pembeli
 $kembalian = $uang_bayar - $grand_total;
 
 // ===================================================================
-// OUTPUT STRUK NOTA FINAL
+// OUTPUT STRUK NOTA FINAL RESTORAN
 // ===================================================================
-echo "\n=========================================\n"; // \n di depan berfungsi sebagai Enter otomatis
-echo "         ISI KERANJANG BELANJA           \n";
+echo "\n=========================================\n";
+echo "          ISI KERANJANG BELANJA          \n";
 echo "=========================================\n";
-// ucwords() bikin huruf pertama tiap kata nama customer otomatis jadi kapital/rapi
+// PENJELASAN ucwords(): Mengubah huruf pertama pada tiap kata menjadi huruf KAPITAL secara otomatis agar tampilan nama di struk rapi.
 echo "Nama Customer: " . ucwords($nama_customer) . "\n";
 echo "-----------------------------------------\n";
 
-// Mengambil baris produk satu per satu dari $keranjang 'as' (sebagai) variabel tunggal $item
 foreach ($keranjang as $item) {
     echo "- " . str_pad($item['nama'], 15, " ") . " (" . $item['qty'] . "x) = Rp " . number_format($item['subtotal'], 0, ',', '.') . "\n";
 }
 
 echo "-----------------------------------------\n";
-echo "Total Belanja  : Rp " . number_format($grand_total, 0, ',', '.') . "\n"; // Cetak total belanja rapi
-echo "Uang Bayar     : Rp " . number_format($uang_bayar, 0, ',', '.') . "\n";  // Cetak uang yang diinput kasir
-echo "Kembalian      : Rp " . number_format($kembalian, 0, ',', '.') . "\n";   // Cetak hasil pengurangan nominal kembalian
+echo "Total Belanja  : Rp " . number_format($grand_total, 0, ',', '.') . "\n"; 
+echo "Uang Bayar     : Rp " . number_format($uang_bayar, 0, ',', '.') .  "\n";  
+echo "Kembalian      : Rp " . number_format($kembalian, 0, ',', '.') . "\n";   
 echo "=========================================\n";
 ?>

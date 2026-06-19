@@ -1,21 +1,17 @@
-# Aplikasi Kasir BBM
+# Project Kasir PHP
 
-Aplikasi kasir sederhana berbasis PHP untuk menghitung jumlah liter BBM berdasarkan uang yang dibayarkan.
+## 1. Kasir BBM
+Fitur:
+- Pilih BBM
+- Hitung liter
+- Cetak struk
 
-## Fitur
 
-- Menampilkan daftar BBM
-- Memilih jenis BBM
-- Menghitung jumlah liter
-- Menampilkan struk pembelian
-
-## Teknologi
-
-- PHP
-
-## Cara Menjalankan
-
-1. Download atau clone repository
-
-```bash
-git clone https://github.com/bruceee05/tugas.git
+## 2. Kasir POS Restoran
+Fitur:
+- Pilih menu
+- Isi nama
+- Keranjang belanja
+- Hitung total
+- Kembalian
+- Cetak struk

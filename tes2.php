@@ -41,7 +41,7 @@ while (true) {
         echo "\nPilih Nomor Menu (1-3): ";
         $input_pilihan = trim(fgets(STDIN));
 
-        // === Cek ketat nilai & tipe data. !ctype_digit artinya BUKAN murni angka bulat. isset buat cek nomor di array
+        // '' (String Kosong) di sini buat ngecek apakah kasir langsung asal pencet Enter tanpa ngetik angka
         if ($input_pilihan === '' || !ctype_digit($input_pilihan) || !isset($daftar_menu[intval($input_pilihan)])) {
             echo "❌ MAAF, NOMOR MENU TIDAK ADA! Silakan pilih angka 1 sampai 3.\n";
             continue; // Mengulang pertanyaan pilih menu saja
@@ -58,7 +58,7 @@ while (true) {
         echo "Jumlah Beli (pcs/bungkus - masukkan angka): ";
         $input_jumlah = trim(fgets(STDIN));
 
-        // Validasi ketat biar ga bisa diisi huruf, minus, atau enter kosong (=== dan !ctype_digit)
+        // Pengecekan ketat: Apakah langsung di-Enter kosong ('') ATAU bukan angka ATAU angkanya 0/minus
         if ($input_jumlah === '' || !ctype_digit($input_jumlah) || intval($input_jumlah) <= 0) {
             echo "Input jumlah tidak valid. Masukkan angka bulat positif saja.\n";
             continue; // Mengulang pertanyaan jumlah beli saja
@@ -68,11 +68,16 @@ while (true) {
         break; // Matikan loop jumlah beli, lanjut masukkan ke keranjang
     }
 
+    // ===================================================================
+    // PROSES MEMASUKKAN BARANG KE KERANJANG (PUSH DATA ARRAY)
+    // ===================================================================
+    // Tanda [] artinya tumpuk/tambahkan data baru ini ke baris paling bawah di laci $keranjang.
+    // Di dalamnya kita bikin stiker label ('nama', 'harga', dll) agar datanya terkelompok rapi.
     $keranjang[] = [
         'nama'     => $daftar_menu[$pilihan]['nama'],
         'harga'    => $daftar_menu[$pilihan]['harga'],
         'qty'      => $jumlah,
-        'subtotal' => $daftar_menu[$pilihan]['harga'] * $jumlah
+        'subtotal' => $daftar_menu[$pilihan]['harga'] * $jumlah // Otomatis mengalikan harga dengan jumlah beli
     ];
 
     echo "Mau tambah menu lain? (y/n): ";
@@ -99,16 +104,32 @@ while (true) {
 // HITUNG TOTAL BELANJAAN
 // ===================================================================
 $grand_total = 0;
+// kata kunci 'as' di sini bertugas memecah array $keranjang dan mengambil isinya satu per satu untuk dinamai alias $item
 foreach ($keranjang as $item) {
     $grand_total += $item['subtotal']; // Estafet penjumlahan subtotal ke grand_total
 }
 
 echo "\n-----------------------------------------\n";
 echo "TOTAL YANG HARUS DIBAYAR: Rp " . number_format($grand_total, 0, ',', '.') . "\n";
-echo "Masukkan Uang Bayar (Rp): ";
-$uang_bayar = intval(trim(fgets(STDIN)));
 
-// Validasi pembayaran uang tunai
+// ===================================================================
+// VALIDASI UANG BAYAR (ANTI KARAKTER ANEH & ANTI KOSONG)
+// ===================================================================
+while (true) {
+    echo "Masukkan Uang Bayar (Rp): ";
+    $input_bayar = trim(fgets(STDIN));
+
+    // Filter ketat: Menolak enter kosong (''), menolak karakter aneh/huruf (!ctype_digit), dan menolak nominal minus
+    if ($input_bayar === '' || !ctype_digit($input_bayar) || intval($input_bayar) <= 0) {
+        echo "❌ Input salah! Mohon masukkan angka bulat saja (Tanpa huruf, spasi, atau simbol).\n\n";
+        continue; // Memaksa kasir mengulang ketik uang bayar yang benar
+    }
+
+    $uang_bayar = intval($input_bayar);
+    break; // Lolos sensor, lanjut ke pengecekan kecukupan uang
+}
+
+// Validasi apakah uangnya cukup atau kurang
 if ($uang_bayar < $grand_total) {
     echo "\n❌ MAAF, UANG ANDA KURANG! Transaksi dibatalkan.\n";
     exit; // exit langsung mematikan total seluruh program detik ini juga biar struk toko ga kecetak
@@ -127,6 +148,7 @@ echo "=========================================\n";
 echo "Nama Customer: " . ucwords($nama_customer) . "\n";
 echo "-----------------------------------------\n";
 
+// Mengambil baris produk satu per satu dari $keranjang 'as' (sebagai) variabel tunggal $item
 foreach ($keranjang as $item) {
     echo "- " . str_pad($item['nama'], 15, " ") . " (" . $item['qty'] . "x) = Rp " . number_format($item['subtotal'], 0, ',', '.') . "\n";
 }

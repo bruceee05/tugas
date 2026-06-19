@@ -50,7 +50,7 @@ while (true) {
         echo "❌ ERROR: Nama customer harus berupa huruf saja (Tanpa angka / simbol)!\n\n";
         continue; 
     }
-
+    //untuk memastikan bahwa inputan yang diterima benar-benar berupa huruf, bukan angka atau karakter lain yang mungkin lolos validasi sebelumnya.
     $nama_customer = $input_nama;
     break; 
 }
@@ -148,6 +148,7 @@ foreach ($keranjang as $item) {
     $grand_total += $item['subtotal']; 
 }
 
+// kegunaan huruf n di \n diawal dan akhir string adalah untuk membuat baris baru di terminal, sehingga output terlihat lebih rapi dan terpisah antar bagian.
 echo "\n-----------------------------------------\n";
 echo "TOTAL YANG HARUS DIBAYAR: Rp " . number_format($grand_total, 0, ',', '.') . "\n";
 echo "-----------------------------------------\n";
@@ -155,11 +156,13 @@ echo "-----------------------------------------\n";
 // ===================================================================
 // PROSES INPUT UANG BAYAR & VALIDASI KECUKUPAN
 // ===================================================================
+// Loop kecil 4: Mengunci validasi input uang bayar (anti-kosong, anti-huruf, anti-minus, dan cek kecukupan)
 while (true) {
     echo "Masukkan Uang Bayar (Rp): ";
     $input_bayar = trim(fgets(STDIN));
 
     // Filter: Anti-kosong, anti-huruf, dan anti-minus
+    //kegunaan === untuk memastikan bahwa input yang diterima benar-benar berupa string kosong, bukan angka nol atau karakter lain.
     if ($input_bayar === '' || !ctype_digit($input_bayar) || intval($input_bayar) <= 0) {
         echo "❌ Input salah! Mohon masukkan angka bulat saja (Tanpa huruf / simbol).\n\n";
         continue; 
@@ -190,10 +193,12 @@ echo "=========================================\n";
 echo "Nama Customer: " . ucwords($nama_customer) . "\n";
 echo "-----------------------------------------\n";
 
+//cara  kerja foreach: Membongkar isi laci array $keranjang yang banyak, diambil satu per satu dari baris teratas, lalu baris tersebut dinamai alias sebagai variabel tunggal $item.
 foreach ($keranjang as $item) {
     echo "- " . str_pad($item['nama'], 15, " ") . " (" . $item['qty'] . "x) = Rp " . number_format($item['subtotal'], 0, ',', '.') . "\n";
 }
 
+// Menampilkan total belanja, uang bayar, dan kembalian dengan format rupiah
 echo "-----------------------------------------\n";
 echo "Total Belanja  : Rp " . number_format($grand_total, 0, ',', '.') . "\n"; 
 echo "Uang Bayar     : Rp " . number_format($uang_bayar, 0, ',', '.') .  "\n";  

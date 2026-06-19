@@ -1,5 +1,5 @@
 <?php
-
+//round digunakan untuk membulatkan angka liter bbm yang didapat menjadi 2 angka di belakang koma, agar tampilan struk nota lebih rapi dan mudah dibaca oleh customer.
 // ===================================================================
 // DATA DAFTAR PILIHAN BBM PERTAMINA (ARRAY MULTIDIMENSI)
 // ===================================================================
@@ -73,7 +73,7 @@ while (true) {
         continue;
     }
 
-
+// Jika lolos validasi, konversi inputan ke integer dan simpan di variabel $nominal
     $nominal = intval($input_nominal);
     
     // Rumus Matematika: Nominal rupiah dibagi harga bbm untuk mencari takaran liter
@@ -122,7 +122,7 @@ while (true) {
         continue;
     }
 
-
+// Jika lolos validasi, keluar dari loop dan lanjut ke proses berikutnya
     break;
 }
 
@@ -154,7 +154,6 @@ echo "Uang Bayar     : Rp " . number_format($uang_terpakai, 0, ',', '.') . "\n";
 
 //rtrim digunakan untuk menghapus karakter '0' dan ',' yang tidak diperlukan pada hasil format angka liter bbm
 $liter_bersih = rtrim(rtrim(number_format($liter_didapat, 2, ',', ''), '0'), ',');
-
 
 echo "Bensin Didapat : " . $liter_bersih . " Liter\n"; 
 

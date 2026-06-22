@@ -67,6 +67,7 @@ while (true) {
     $input_nominal = trim(fgets(STDIN));
     //trim digunakan untuk menghapus spasi kosong di awal dan akhir inputan, sehingga validasi berikutnya bisa lebih akurat dalam memeriksa apakah inputan benar-benar kosong atau tidak.
     // Validasi dasar: Harus angka bulat positif dan gak boleh langsung di-enter kosong
+
     if ($input_nominal === '' || !ctype_digit($input_nominal) || intval($input_nominal) <= 0) {
 
         echo "❌ Masukkan nominal yang valid.\n";
@@ -108,7 +109,7 @@ while (true) {
         continue;
     }
 
-
+    //intval digunakan untuk mengubah string ke integer
     $uang = intval($input_uang);
 
 

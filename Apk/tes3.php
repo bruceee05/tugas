@@ -70,7 +70,7 @@ while (true) {
         echo "\n❌ TIDAK BISA JALAN! Bensin sudah habis total. Silakan isi bensin dulu.\n";
         break; 
     }
-
+    
     // ===============================================================
     // VALIDASI INPUT KETAT: ANTI-HURUF, ANTI-MINUS, ANTI-SIMBOL
     // ===============================================================
@@ -125,7 +125,7 @@ while (true) {
 
         // Kunci penahan jarak: Menghindari odometer kebablasan melewati target finish sesi ini
         if ($jarak_tempuh_total >= $target_finish) {
-            $selisih_kelebihan = $jarak_tempuh_total - $target_finish;
+            $selisih_kelebihan = $jarak_tempuh_total - $target_finish; 
             $jarak_tempuh_total = $target_finish; // Paksa odometer pas di angka target
             
             // Potong sisa kecepatan mps di detik terakhir agar hitungan bensin tidak kelebihan
@@ -143,7 +143,7 @@ while (true) {
 
         // Ambil data jumlah bar bensin aktif untuk dilempar ke panel display Lexi
         $bar_aktif = getJumlahBar($bensin_saat_ini, $bensin_awal, $total_bar);
-
+        
         // REFRESH PANEL INDIKATOR DI TERMINAL (CLS untuk Windows, Clear untuk Linux/Mac)
         if (strtoupper(substr(PHP_OS, 0, 3)) === 'WIN') { popen('cls', 'w'); } else { system('clear'); }
 

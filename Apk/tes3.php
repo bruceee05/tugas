@@ -1,94 +1,224 @@
 <?php
+// ===================================================================
+// KONSTANTA & SETTING AWAL SPIDOMETER (DI LUAR LOOP UTAMA)
+// ===================================================================
+$bensin_awal        = 4.0;          // Batas maksimal kapasitas bensin awal (4 Liter)
+$bensin_saat_ini    = $bensin_awal; // Indikator bensin real-time yang akan berkurang seiring jalan
+$total_bar          = 6;            // Jumlah tingkatan bar bensin Yamaha Lexi (Ada 6 bar di foto)
 
-// --- 1. MEMBUAT MEMORI ODOMETER ---
-$file_odometer = "jarak_total.txt";
+// --- FITUR SIMPAN DATA (MEMORI SPIDOMETER) ---
+$file_spidometer = "jarak_total.txt";
 
-// file_exists: Fungsi bawaan PHP untuk mengecek apakah sebuah file sudah ada atau belum.
-// file_get_contents: Mengambil/membaca seluruh isi teks yang ada di dalam file.
-// floatval: Mengubah teks yang dibaca tadi menjadi angka desimal (float) agar bisa dijumlahkan.
-// Operator Ternary (? :) adalah singkatan dari If-Else. Jika file ada (?), ambil nilainya. Jika tidak ada (:), set jadi 0.
-$jarak_tersimpan = file_exists($file_odometer) ? floatval(file_get_contents($file_odometer)) : 0;
+// file_exists: Memastikan file penyimpanan odometer sudah terbuat atau belum.
+// file_get_contents: Mengambil data string angka jarak dari dalam file txt.
+// floatval: Mengubah teks tersebut jadi angka pecahan desimal agar bisa dipakai berhitung.
+// Jika file belum ada, otomatis odometer diset dari nol (0.0).
+$jarak_tempuh_total = file_exists($file_spidometer) ? floatval(file_get_contents($file_spidometer)) : 0.0;
 
-// --- 2. SETTINGAN AWAL MOTOR ---
-$bensin_awal = 4;              // Stok bensin awal di tangki (4 Liter)
-$bensin_saat_ini = $bensin_awal;   // Set bensin sekarang dalam kondisi penuh (4 Liter)
-$jarak_tempuh_sesi_ini = 0;     // Jarak perjalanan baru dimulai dari angka 0
+// ===================================================================
+// DAFTAR FUNGSI-FUNGSI LOGIKA UTAMA SISTEM
+// ===================================================================
 
-echo "=== MENGHIDUPKAN MESIN ===\n";
-
-// --- 3. MENERIMA INPUT DARI USER ---
-echo "Masukkan target jarak (meter): ";
-// trim: Menghapus spasi kosong atau karakter enter yang tidak sengaja ikut ketgetik di awal/akhir input.
-// fgets(STDIN): Perintah khusus PHP CLI (terminal) untuk menunggu dan mengambil apa pun yang diketik user sampai menekan Enter.
-// intval: Memaksa/mengubah data input menjadi format angka bulat (integer) demi keamanan perhitungan.
-$target_jarak = intval(trim(fgets(STDIN))); 
-
-echo "Masukkan kecepatan (km/jam): ";
-$kecepatan = intval(trim(fgets(STDIN)));    
-
-// --- 4. FUNGSI UNTUK MENGGAMBAR BAR BENSIN ---
-function hitung_bar($bensin, $total) {
-    // ceil (Ceiling): Pembulatan angka desimal ke ATAS ke angka bulat terdekat (contoh: 4.1 jadi 5).
-    // Ini jarang muncul, gunanya di sini agar lampu indikator kotak terakhir gak cepet mati selama bensin belum benar-benar 0.
-    $jumlah_bar = ceil(($bensin / $total) * 6); // Konversi sisa bensin ke skala 6 baris kotak
-    // ceil digunakan untuk memastikan bahwa jika ada sisa bensin, setidaknya satu bar akan tetap menyala, sehingga indikator tidak langsung mati saat bensin masih tersisa sedikit.
-    // max: Fungsi matematika untuk mengambil angka tertinggi. 
-    // Di sini dipake mengunci angka minimal di 0, supaya kalau bensinnya minus, tampilan bar tidak ikutan error/minus.
-    $jumlah_bar = max(0, $jumlah_bar); 
-    
-    // str_repeat: Fungsi unik untuk menduplikat/mengulang teks otomatis sebanyak angka yang ditentukan.
-    // Tanda titik (.) di PHP adalah Operator Konkatenasi yang gunanya untuk menyambung dua teks menjadi satu.
-    // return: Perintah wajib di fungsi untuk melempar/mengembalikan hasil rakitan teks bar ini keluar agar bisa dicetak.
-    return str_repeat("█", $jumlah_bar) . str_repeat("-", 6 - $jumlah_bar);
+/**
+ * 1. Fungsi Hitung Jarak Tempuh
+ * Menambahkan odometer total berdasarkan kecepatan meter per detik (mps) yang didapat.
+ */
+function hitungJarakTempuh($jarak_sekarang, $kecepatan_mps) {
+    return $jarak_sekarang + $kecepatan_mps;
 }
 
-// --- 5. RUMUS DASAR KECEPATAN ---
-$meter_per_detik = ($kecepatan * 1000) / 3600; // Mengubah satuan km/jam menjadi meter per detik (m/s)
-
-// --- 6. PROSES SIMULASI PERJALANAN (REAL-TIME) ---
-// Perulangan while berjalan terus selama jarak belum sampai target DAN bensin masih di atas 0
-while ($jarak_tempuh_sesi_ini < $target_jarak && $bensin_saat_ini > 0) {
-    $bensin_terpakai = $meter_per_detik / 1000; // Rumus kaku: Setiap menempuh 1 meter membutuhkan 0.001 liter bensin
-    $bensin_saat_ini -= $bensin_terpakai;       // Mengurangi sisa bensin di tangki
-    $jarak_tempuh_sesi_ini += $meter_per_detik; // Menambah jarak yang sudah dilewati motor
-
-    // \033[H\033[J: Ini adalah "ANSI Escape Code" (perintah sakti terminal). 
-    // \033[H memindahkan kursor ketikan balik ke pojok kiri atas, \033[J menghapus seluruh teks lama di layar.
-    // Efeknya layar langsung bersih dalam sekejap, membuat angka baru tercetak di posisi yang sama (efek real-time).
-    echo "\033[H\033[J"; 
+/**
+ * 2. Fungsi Hitung Sisa Bensin
+ * Mengurangi isi bensin secara real-time (Konfigurasi: 1 meter jalan memakan 0.001 liter bensin).
+ * Jika hasil pengurangan minus, otomatis dikunci di angka 0 agar tidak error.
+ */
+function hitungSisaBensin($bensin_sekarang, $kecepatan_mps) {
+    $bensin_terpakai = $kecepatan_mps / 1000; 
+    $sisa = $bensin_sekarang - $bensin_terpakai;
     
-    // Tampilkan Dashboard ke Layar Terminal
-    echo "=== SEDANG BERJALAN ===\n";
-    // number_format: Fungsi untuk merapikan angka. Angka 2 berarti menampilkan maksimal 2 angka di belakang koma (desimal).
-    echo "Sisa Bensin    : " . number_format($bensin_saat_ini, 2) . " L\n"; 
-    echo "Indikator Bar  : [" . hitung_bar($bensin_saat_ini, $bensin_awal) . "]\n"; // Memanggil fungsi gambar bar di atas
-    // Angka 0 di number_format artinya angka dibulatkan tanpa koma biar tampilan jaraknya bersih.
-    echo "Jarak Sesi Ini : " . number_format($jarak_tempuh_sesi_ini, 0) . " m\n"; 
-    echo "=======================\n";
-    
-    // usleep (Microsecond Sleep): Menghentikan sementara jalannya program (rem komputer).
-    // Angka 500000 microsecond = 0.5 detik. Tanpa ini, komputer bakal ngitung super cepat (0.0001 detik langsung kelar),
-    // sehingga mata manusia gak bakal sempat melihat pergerakan angka real-time nya.
-    usleep(500000); 
+    return ($sisa < 0) ? 0 : $sisa;
 }
 
-// --- 7. NOTIFIKASI HASIL AKHIR ---
-echo "\033[H\033[J"; // Bersihkan layar dashboard putaran terakhir untuk diganti teks ringkasan
-$total_semua = $jarak_tersimpan + $jarak_tempuh_sesi_ini; // Jumlahkan odometer lama dengan jarak di sesi ini
-
-// file_put_contents: Kebalikan dari file_get_contents. Fungsi ini langsung menulis dan menyimpan data angka terbaru ke file txt.
-file_put_contents($file_odometer, $total_semua); 
-
-echo "=============================\n";
-echo "    RINGKASAN PERJALANAN     \n";
-echo "=============================\n";
-if ($bensin_saat_ini <= 0) {
-    echo "Status        : BENSIN HABIS!\n";
-} else {
-    echo "Status        : SAMPAI TUJUAN\n";
+/**
+ * 3. Fungsi Mendapatkan Jumlah Bar
+ * Menghitung berapa jumlah baris BBM yang harus menyala berdasarkan rasio sisa bensin saat ini.
+ * Menggunakan floor() agar pembulatan dipaksa ke bawah supaya penurunan bar bensin presisi.
+ */
+function getJumlahBar($sisa_bensin, $bensin_awal, $total_bar) {
+    if ($sisa_bensin <= 0) return 0;
+    return (int) floor(($sisa_bensin / $bensin_awal) * $total_bar);
 }
-echo "Jarak Sesi Ini: " . number_format($jarak_tempuh_sesi_ini, 0) . " meter\n";
-echo "Total Odometer: " . number_format($total_semua, 0) . " meter\n";
-echo "Sisa Bensin   : " . number_format(max(0, $bensin_saat_ini), 2) . " Liter\n";
-echo "=============================\n";
+
+/**
+ * 4. Fungsi Simulasi Kecepatan
+ * Mengacak kecepatan motor secara real-time antara rentang 40 s/d 60 km/jam.
+ * Menggunakan Pass-by-Reference (tanda &) agar nilai variabel asli di luar fungsi bisa langsung berubah.
+ */
+function dapatkanKecepatan(&$kmjam, &$mps) {
+    $kmjam = rand(40, 60); // Menghasilkan angka acak km/jam
+    $mps   = $kmjam / 3.6; // Rumus konversi dari satuan km/jam ke satuan meter per detik (mps)
+}
+
+
+// ===================================================================
+// LOOP BESAR UTAMA: AGAR BISA INPUT JARAK BERULANG-ULANG TANPA RESET
+// ===================================================================
+while (true) {
+    
+    // Validasi awal sebelum jalan: Jika bensin kosong, gerbang input langsung dikunci
+    if ($bensin_saat_ini <= 0) {
+        echo "\n❌ TIDAK BISA JALAN! Bensin sudah habis total. Silakan isi bensin dulu.\n";
+        break; 
+    }
+
+    // ===============================================================
+    // VALIDASI INPUT KETAT: ANTI-HURUF, ANTI-MINUS, ANTI-SIMBOL
+    // ===============================================================
+    while (true) {
+        echo "\nPosisi Speedometer Saat Ini: " . number_format($jarak_tempuh_total, 0, ',', '.') . " Meter\n";
+        echo "Sisa Bensin Saat Ini    : " . number_format($bensin_saat_ini, 2, ',', '.') . " Liter\n";
+        echo "Masukkan Jarak Perjalanan Baru (Meter): ";
+        
+        $input_jarak_baru = trim(fgets(STDIN));
+
+        // Cek jika user langsung tekan enter tanpa isi angka
+        if ($input_jarak_baru === '') {
+            echo "❌ ERROR: Jarak tidak boleh kosong!\n";
+            continue; 
+        }
+
+        // ctype_digit: Memastikan string murni berisi angka bulat positif (Hukumnya wajib)
+        if (!ctype_digit($input_jarak_baru)) {
+            echo "❌ ERROR: Hanya boleh angka bulat positif! (Tanpa huruf, spasi, simbol, atau minus '-')\n";
+            continue; 
+        }
+
+        // Memastikan jarak yang diinput tidak boleh nol atau minus
+        if (intval($input_jarak_baru) <= 0) {
+            echo "❌ ERROR: Jarak harus lebih besar dari 0 meter!\n";
+            continue; 
+        }
+
+        $jarak_baru = intval($input_jarak_baru);
+        break; // Input lolos validasi, keluar dari loop input
+    }
+
+    // Menghitung target angka odometer akhir yang harus dicapai pada sesi perjalanan ini
+    $target_finish = $jarak_tempuh_total + $jarak_baru;
+
+    echo "\n=========================================\n";
+    echo "       MOTOR KEMBALI MELAJU...           \n";
+    echo "=========================================\n";
+    echo "Target Speedometer Akhir: " . number_format($target_finish, 0, ',', '.') . " Meter\n";
+    echo "=========================================\n";
+    sleep(2); // Delay visual 2 detik sebelum masuk ke mode panel live digital
+
+    // ===============================================================
+    // SIMULASI PERJALANAN LIVE & REAL-TIME (MENGALIR TIAP 1 DETIK)
+    // ===============================================================
+    while (true) {
+        $kecepatan_kmjam = 0; $kecepatan_mps = 0;
+        dapatkanKecepatan($kecepatan_kmjam, $kecepatan_mps);
+
+        // 1. Perbarui nilai odometer berdasarkan pergerakan jarak per detik ini
+        $jarak_tempuh_total = hitungJarakTempuh($jarak_tempuh_total, $kecepatan_mps);
+
+        // Kunci penahan jarak: Menghindari odometer kebablasan melewati target finish sesi ini
+        if ($jarak_tempuh_total >= $target_finish) {
+            $selisih_kelebihan = $jarak_tempuh_total - $target_finish;
+            $jarak_tempuh_total = $target_finish; // Paksa odometer pas di angka target
+            
+            // Potong sisa kecepatan mps di detik terakhir agar hitungan bensin tidak kelebihan
+            $kecepatan_mps = $kecepatan_mps - $selisih_kelebihan;
+        }
+
+        // 2. Potong kapasitas bensin secara murni dari pergerakan jarak detik ini
+        $bensin_saat_ini = hitungSisaBensin($bensin_saat_ini, $kecepatan_mps);
+
+        // Jika bensin menyentuh angka 0, paksa kecepatan mati total (mogok)
+        if ($bensin_saat_ini <= 0) {
+            $bensin_saat_ini = 0;
+            $kecepatan_kmjam = 0;
+        }
+
+        // Ambil data jumlah bar bensin aktif untuk dilempar ke panel display Lexi
+        $bar_aktif = getJumlahBar($bensin_saat_ini, $bensin_awal, $total_bar);
+
+        // REFRESH PANEL INDIKATOR DI TERMINAL (CLS untuk Windows, Clear untuk Linux/Mac)
+        if (strtoupper(substr(PHP_OS, 0, 3)) === 'WIN') { popen('cls', 'w'); } else { system('clear'); }
+
+        // Hitung sisa jarak mundur (countdown) sesi perjalanan menuju finish
+        $sisa_jarak_sesi = $target_finish - $jarak_tempuh_total;
+
+        // ===============================================================
+        // VISUALISASI LAYAR UTAMA SPEEDOMETER YAMAHA LEXI CUSTOM
+        // ===============================================================
+        echo "================================================\n";
+        echo "               PANEL SPEEDOMETER                \n";
+        echo "================================================\n";
+        
+        // Baris 6 (Paling Atas / Kondisi Full)
+        echo "  [F] " . ($bar_aktif >= 6 ? "◢◤" : "  ") . "      | \n";
+        // Baris 5
+        echo "      " . ($bar_aktif >= 5 ? "◢◤" : "  ") . "      |    Sisa Jarak Sesi:\n";
+        // Baris 4
+        echo "      " . ($bar_aktif >= 4 ? "◢◤" : "  ") . "      |    " . number_format($sisa_jarak_sesi, 0, ',', '.') . " Meter\n";
+        // Baris 3
+        echo "      " . ($bar_aktif >= 3 ? "◢◤" : "  ") . "      | \n";
+        // Baris 2
+        echo "      " . ($bar_aktif >= 2 ? "◢◤" : "  ") . "      |    Kecepatan Real-Time:\n";
+        // Baris 1 (Paling Bawah / Kondisi Empty)
+        echo "  [E] " . ($bar_aktif >= 1 ? "◢◤" : "  ") . "      |    " . $kecepatan_kmjam . " km/h\n";
+        
+        echo "------------------------------------------------\n";
+        echo " Speedometer Total : " . number_format($jarak_tempuh_total, 0, ',', '.') . " M  |  Bensin: " . number_format($bensin_saat_ini, 2, ',', '.') . " L (" . $bar_aktif . "/6)\n"; 
+        echo "================================================\n";
+
+        // KONDISI BREAK PERJALANAN 1: Motor mogok total karena bensin habis di jalan
+        if ($bensin_saat_ini <= 0) {
+            echo "\n❌ MOGOK! Bensin habis di jalan.\n";
+            file_put_contents($file_spidometer, $jarak_tempuh_total); // Simpan odometer terakhir
+            break 2; // Keluar dari loop simulasi dan loop besar sekaligus
+        }
+
+        // KONDISI BREAK PERJALANAN 2: Motor sukses mendarat di target tujuan sesi ini
+        if ($jarak_tempuh_total >= $target_finish) {
+            echo "\n🏁 SAMPAI! Motor sudah sampai di tujuan sesi ini.\n";
+            file_put_contents($file_spidometer, $jarak_tempuh_total); // Simpan odometer sukses
+            break; // Keluar dari loop simulasi live menuju pertanyaan interaktif
+        }
+
+        sleep(1); // Interval detak simulasi real-time per 1 detik
+    }
+
+    // ===============================================================
+    // PERTANYAAN INTERAKTIF: MAU JALAN LAGI ATAU SELESAI?
+    // ===============================================================
+    while (true) {
+        echo "\nMau lanjut berkendara lagi? (y/n): ";
+        $tanya = strtolower(trim(fgets(STDIN)));
+        
+        if ($tanya !== 'y' && $tanya !== 'n') {
+            echo "❌ INPUT SALAH! Ketik 'y' untuk lanjut atau 'n' untuk parkir.\n";
+            continue; 
+        }
+        break; 
+    }
+
+    // Jika memilih 'n', motor resmi diparkir dan loop besar utama selesai
+    if ($tanya === 'n') {
+        echo "\nMotor diparkir. Perjalanan selesai!\n";
+        break; 
+    }
+}
+
+// ===================================================================
+// OUTPUT DATA AKHIR (STRUK REKAPAN AKUMULATIF KESELURUHAN)
+// ===================================================================
+echo "\n=========================================\n";
+echo "         REKAPAN AKHIR SPEEDOMETER          \n";
+echo "=========================================\n";
+echo "Total Jarak Speedometer : " . number_format($jarak_tempuh_total, 0, ',', '.') . " Meter\n";
+echo "Sisa Bensin Akhir       : " . number_format($bensin_saat_ini, 2, ',', '.') . " Liter\n";
+echo "=========================================\n";
 ?>

@@ -124,7 +124,7 @@ while (true) {
         if (!ctype_digit($input_kecepatan) || !ctype_digit($input_waktu_menit)) {
             echo "❌ ERROR: Semua input hanya boleh angka bulat positif!\n";
             continue;
-        }
+        }                                                                                                                                                                                                   
 
         // intval(): Mengubah (parsing) variabel berjenis teks string angka murni tadi menjadi tipe data Integer resmi di memory PHP.
         if (intval($input_kecepatan) <= 0 || intval($input_waktu_menit) <= 0) {

@@ -1,0 +1,118 @@
+{
+    "buku": {
+        "1": {
+            "judul": "Atlas",
+            "stok": 0
+        },
+        "2": {
+            "judul": "Sejarah",
+            "stok": 1
+        },
+        "3": {
+            "judul": "KBBI",
+            "stok": 0
+        },
+        "4": {
+            "judul": "Pantun",
+            "stok": 1
+        },
+        "5": {
+            "judul": "Si Kancil",
+            "stok": 1
+        },
+        "6": {
+            "judul": "Ensiklopedia",
+            "stok": 1
+        },
+        "7": {
+            "judul": "Kisah Bung Hatta",
+            "stok": 1
+        },
+        "8": {
+            "judul": "Pantun",
+            "stok": 1
+        },
+        "9": {
+            "judul": "Harimau",
+            "stok": 1
+        }
+    },
+    "peminjam": {
+        "1": {
+            "nama": "First",
+            "email": "kesatu@gmail.com"
+        },
+        "2": {
+            "nama": "Agus",
+            "email": "agus@gmail.com"
+        },
+        "3": {
+            "nama": "Sunarto",
+            "email": "narto@gmail.com"
+        },
+        "4": {
+            "nama": "dwi",
+            "email": "dwi@gmail.com"
+        },
+        "5": {
+            "nama": "Antony",
+            "email": "anton@gmail.com"
+        },
+        "6": {
+            "nama": "Leonardo",
+            "email": "leo@gmail.com"
+        },
+        "7": {
+            "nama": "Rafka",
+            "email": "rafka@gmail.com"
+        },
+        "8": {
+            "nama": "Sheva",
+            "email": "siswa@gmail.com"
+        },
+        "9": {
+            "nama": "bape",
+            "email": "bape@gmail.com"
+        }
+    },
+    "peminjaman": {
+        "PJM001": {
+            "ktp": "1",
+            "nama_peminjam": "First",
+            "isbn": "1",
+            "judul_buku": "Atlas",
+            "tgl_pinjam": "2026-06-29",
+            "tgl_jatuh_tempo": "2026-07-28",
+            "status_kembali": "Tepat Waktu",
+            "tgl_kembali": "2026-07-26"
+        },
+        "PJM002": {
+            "ktp": "3",
+            "nama_peminjam": "Sunarto",
+            "isbn": "2",
+            "judul_buku": "Sejarah",
+            "tgl_pinjam": "2026-06-29",
+            "tgl_jatuh_tempo": "2026-07-22",
+            "status_kembali": "Terlambat (342 Hari)",
+            "tgl_kembali": "2027-06-29"
+        },
+        "PJM003": {
+            "ktp": "1",
+            "nama_peminjam": "First",
+            "isbn": "1",
+            "judul_buku": "Atlas",
+            "tgl_pinjam": "2026-06-29",
+            "tgl_jatuh_tempo": "2026-07-27",
+            "status_kembali": "Dipinjam"
+        },
+        "PJM004": {
+            "ktp": "5",
+            "nama_peminjam": "Antony",
+            "isbn": "3",
+            "judul_buku": "KBBI",
+            "tgl_pinjam": "2026-06-29",
+            "tgl_jatuh_tempo": "2026-07-12",
+            "status_kembali": "Dipinjam"
+        }
+    }
+}

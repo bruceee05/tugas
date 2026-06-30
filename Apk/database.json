@@ -35,6 +35,10 @@
         "9": {
             "judul": "Harimau",
             "stok": 1
+        },
+        "10": {
+            "judul": "Cerita Pendek",
+            "stok": 1
         }
     },
     "peminjam": {

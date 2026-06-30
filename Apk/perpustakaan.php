@@ -20,7 +20,7 @@ define("C_WHITE", "\033[37m");
 function loadDatabase()
 {
     if (!file_exists(FILE_DB)) {
-        $init_kosong = ["buku" => [], "peminjam" => [], "peminjaman" => []];
+        $init_kosong = ["buku" => [], "peminjam" => [], "peminjaman" => []];// Inisialisasi database kosong jika file tidak ada
         file_put_contents(FILE_DB, json_encode($init_kosong, JSON_PRETTY_PRINT));
         return $init_kosong;
     }
@@ -28,9 +28,9 @@ function loadDatabase()
     $json_txt = file_get_contents(FILE_DB);
     $data = json_decode($json_txt, true); 
 
-    if ($data === null || !isset($data['peminjaman']) || !isset($data['buku']) || !isset($data['peminjam'])) {
+    if ($data === null || !isset($data['peminjaman']) || !isset($data['buku']) || !isset($data['peminjam'])) { // Validasi: Jika file JSON rusak atau tidak sesuai format, buat database kosong baru
         $init_kosong = ["buku" => [], "peminjam" => [], "peminjaman" => []];
-        file_put_contents(FILE_DB, json_encode($init_kosong, JSON_PRETTY_PRINT));
+        file_put_contents(FILE_DB, json_encode($init_kosong, JSON_PRETTY_PRINT));// Simpan database kosong ke file JSON
         return $init_kosong;
     }
 
@@ -39,14 +39,14 @@ function loadDatabase()
 
 function saveDatabase($db)
 {
-    file_put_contents(FILE_DB, json_encode($db, JSON_PRETTY_PRINT));
+    file_put_contents(FILE_DB, json_encode($db, JSON_PRETTY_PRINT));// Simpan array ke file JSON dengan format yang rapi
 }
 
 function jedaMenu()
 {
     echo "\n" . C_CYAN . str_repeat("-", 172) . C_RESET . "\n";
     echo C_YELLOW . "Tekan [ENTER] untuk kembali ke menu..." . C_RESET;
-    system('pause > nul');
+    system('pause > nul');// Menunggu inputan ENTER dari user
 }
 
 // -----------------------------------------------------------------
@@ -61,7 +61,7 @@ function tambahBuku()
 {
     global $db; 
     echo "\n" . C_BOLD . C_CYAN . "--- UTILS: TAMBAH BUKU BARU ---" . C_RESET . "\n";
-    $isbn = trim(readline("Masukkan Nomor ISBN: ")); 
+    $isbn = trim(readline("Masukkan Nomor ISBN: ")); //readline digunakan untuk membaca inputan dari user, trim digunakan untuk menghapus spasi kosong di awal dan akhir inputan
 
     if (!preg_match('/^[0-9-]+$/', $isbn)) {
         echo C_RED . "❌ Gagal: Nomor ISBN tidak boleh mengandung huruf!" . C_RESET . "\n";
@@ -76,7 +76,7 @@ function tambahBuku()
     }
 
     $judul = readline("Masukkan Judul Buku: ");
-    $db['buku'][$isbn] = ["judul" => $judul, "stok" => 1];
+    $db['buku'][$isbn] = ["judul" => $judul, "stok" => 1];//associative array untuk menyimpan data buku baru dengan ISBN sebagai key dan judul serta stok sebagai value
 
     saveDatabase($db);
     echo C_GREEN . "✅ Sukses: Buku '$judul' berhasil didaftarkan." . C_RESET . "\n";
@@ -108,7 +108,7 @@ function tambahPeminjam()
     }
 
     foreach ($db['peminjam'] as $p) {
-        if ($p['email'] === $email) {
+        if ($p['email'] === $email) { // Cek apakah email sudah digunakan oleh anggota lain
             echo C_RED . "❌ Gagal: Email sudah digunakan oleh orang lain!" . C_RESET . "\n";
             jedaMenu();
             return;
@@ -131,7 +131,7 @@ function prosesPeminjaman()
     echo "\n" . C_BOLD . C_CYAN . "--- FORM PEMINJAMAN BUKU ---" . C_RESET . "\n";
     $ktp = trim(readline("Masukkan Nomor KTP Peminjam: "));
 
-    if (!isset($db['peminjam'][$ktp])) {
+    if (!isset($db['peminjam'][$ktp])) {//isset digunakan untuk memeriksa apakah data peminjam dengan KTP tersebut ada di database atau tidak
         echo C_RED . "❌ Gagal: Data Anggota tidak ditemukan!" . C_RESET . "\n";
         jedaMenu();
         return;
@@ -171,7 +171,7 @@ function prosesPeminjaman()
 
     $date = new DateTime($tgl_pinjam); 
     $date->modify("+$durasi days"); 
-    $tgl_jatuh_tempo = $date->format('Y-m-d'); 
+    $tgl_jatuh_tempo = $date->format('Y-m-d'); // Format tanggal jatuh tempo sesuai format YYYY-MM-DD
 
     $db['buku'][$isbn]['stok']--; 
 
@@ -214,8 +214,8 @@ function prosesPengembalian()
     echo C_WHITE . "Format Tanggal: YYYY-MM-DD (Contoh: 2026-07-05)" . C_RESET . "\n";
     $tgl_kembali = trim(readline("Masukkan Tanggal Pengembalian: "));
 
-    if (empty($tgl_kembali) || !preg_match('/^(\d{4})-(\d{2})-(\d{2})$/', $tgl_kembali, $matches)) {
-        echo C_RED . "❌ Gagal: Format penulisan tanggal salah! Gunakan format YYYY-MM-DD." . C_RESET . "\n";
+    if (empty($tgl_kembali) || !preg_match('/^(\d{4})-(\d{2})-(\d{2})$/', $tgl_kembali, $matches)) { // Validasi format tanggal menggunakan regex
+        echo C_RED . "❌ Gagal: Format penulisan tanggal salah! Gunakan format YYYY-MM-DD." . C_RESET . "\n";//regex digunakan untuk memeriksa apakah inputan tanggal sesuai dengan format yang diharapkan  
         jedaMenu();
         return;
     }
@@ -230,8 +230,19 @@ function prosesPengembalian()
         return;
     }
 
+    // ... kode yang atas tetep sama ...
+
     $jt = new DateTime($data_pinjam['tgl_jatuh_tempo']);
     $tk = new DateTime($tgl_kembali);
+    $tp = new DateTime($data_pinjam['tgl_pinjam']); // <--- Tambahin objek tanggal pinjam
+
+    // --- NAH, TAMBAHIN VALIDASI INI ---
+    if ($tk < $tp) {
+        echo C_RED . "❌ Gagal: Tanggal kembali gak masuk akal, masa sebelum tanggal pinjam!" . C_RESET . "\n";
+        jedaMenu();
+        return;
+    }
+    // ----------------------------------
 
     if ($tk <= $jt) {
         $status = "Tepat Waktu";
@@ -242,7 +253,9 @@ function prosesPengembalian()
         $color_status = C_RED;
     }
 
-    $db['buku'][$data_pinjam['isbn']]['stok']++; 
+    // ... kode ke bawahnya tetep sama ...
+
+    $db['buku'][$data_pinjam['isbn']]['stok']++;  //++ untuk menambah stok buku karena sudah dikembalikan
 
     $data_pinjam['status_kembali'] = $status;
     $data_pinjam['tgl_kembali'] = $tgl_kembali;
@@ -267,7 +280,7 @@ function tampilkanLaporan()
     } else {
         foreach ($db['buku'] as $isbn => $b) {
             $status_buku = ($b['stok'] > 0) ? "Tersedia" : "Sedang Dipinjam";
-            $baris_buku[] = ["isbn" => $isbn, "judul" => $b['judul'], "stok" => $b['stok'], "status" => $status_buku];
+            $baris_buku[] = ["isbn" => $isbn, "judul" => $b['judul'], "stok" => $b['stok'], "status" => $status_buku];//associative array
         }
     }
 
@@ -280,7 +293,7 @@ function tampilkanLaporan()
             if ($status_pjm === "Dipinjam") {
                 $status_pjm = "-";
             }
-            $baris_pjm[] = ["id" => $id, "nama" => $t['nama_peminjam'], "judul" => $t['judul_buku'], "jt" => $t['tgl_jatuh_tempo'], "status" => $status_pjm];
+            $baris_pjm[] = ["id" => $id, "nama" => $t['nama_peminjam'], "judul" => $t['judul_buku'], "jt" => $t['tgl_jatuh_tempo'], "status" => $status_pjm];//associative array 
         }
     }
 

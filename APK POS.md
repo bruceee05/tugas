@@ -19,7 +19,7 @@ Fitur:
 
 ---
 
-## 3. Simulasi Odometer Motor (CLI)
+## 3. Simulasi Speedometer Motor (CLI)
 Fitur:
 - Input target jarak (meter)
 - Input kecepatan (km/jam)

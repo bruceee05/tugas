@@ -58,7 +58,7 @@ function tambahBuku()
     }
 
     if (isset($db['buku'][$isbn])) {
-        echo "❌ Gagal: Buku dengan ISBN tersebut sudah terdaftar!\n";
+        echo "❌ Gagal: Buku dengan ISBN tersebut sudah terdaftar!\n";//isset digunakan untuk memeriksa apakah data buku dengan ISBN tersebut sudah ada di database atau belum
         jedaMenu();
         return;
     }
@@ -77,8 +77,8 @@ function tambahBuku()
 function tambahAnggota()
 {
     global $db;
-    echo "\n--- UTILS: REGISTRASI ANGGOTA ---\n";
-    $ktp = trim(readline("Masukkan Nomor KTP: "));
+    echo "\n--- UTILS: REGISTRASI ANGGOTA ---\n";//readline digunakan untuk membaca inputan dari user
+    $ktp = trim(readline("Masukkan Nomor KTP: "));//trim digunakan untuk menghapus spasi kosong di awal dan akhir inputan.
 
     if (isset($db['anggota'][$ktp])) {
         echo "❌ Gagal: Nomor KTP sudah terdaftar!\n";
@@ -86,11 +86,20 @@ function tambahAnggota()
         return;
     }
 
-    $nama = readline("Masukkan Nama Lengkap: ");
+    $nama = trim(readline("Masukkan Nama Lengkap: "));
+
+    // Validasi nama agar tidak bisa diinput menggunakan angka atau simbol aneh
+    if (!preg_match('/^[a-zA-Z\s]+$/', $nama)) {
+        echo "❌ Gagal: Nama lengkap hanya boleh berisi huruf dan spasi!\n";
+        jedaMenu();
+        return;
+    }
+
     $email = trim(readline("Masukkan Email: "));
 
-    if (!filter_var($email, FILTER_VALIDATE_EMAIL)) {
-        echo "❌ Gagal: Format penulisan email salah!\n";
+    // Validasi email agar .cok langsung gagal, hanya menerima ekstensi domain standar (.com, .id, dll)
+    if (!filter_var($email, FILTER_VALIDATE_EMAIL) || !preg_match('/\.([a-z]{2,4}|co\.id)$/i', $email) || preg_match('/\.cok$/i', $email)) {
+        echo "❌ Gagal: Format penulisan email salah atau domain tidak diizinkan!\n";
         jedaMenu();
         return;
     }
@@ -220,15 +229,13 @@ function prosesPengembalian()
 
     $jt = new DateTime($data_pinjam['tgl_jatuh_tempo']);
     $tk = new DateTime($tgl_kembali);
-    $tp = new DateTime($data_pinjam['tgl_pinjam']); // <--- Tambahin objek tanggal pinjam
+    $tp = new DateTime($data_pinjam['tgl_pinjam']); 
 
-    // --- NAH, TAMBAHIN VALIDASI INI ---
     if ($tk < $tp) {
         echo "❌ Gagal: Tanggal kembali gak masuk akal, masa sebelum tanggal pinjam!\n";
         jedaMenu();
         return;
     }
-    // ----------------------------------
 
     if ($tk <= $jt) {
         $status = "Tepat Waktu";
@@ -337,12 +344,12 @@ while (true) {
     echo "\n======================================\n";
     echo "       PANEL ADMIN PERPUSTAKAAN       \n";
     echo "======================================\n";
-    echo "1. Registrasi Buku Baru\n";
+    echo "1. Tambah Buku Baru\n";
     echo "2. Registrasi Anggota Baru\n";
-    echo "3. Input Peminjaman Buku\n";
-    echo "4. Input Pengembalian Buku\n";
+    echo "3. Peminjaman Buku\n";
+    echo "4. Pengembalian Buku\n";
     echo "5. Lihat Daftar & Riwayat Peminjaman\n";
-    echo "6. Keluar Sistem\n";
+    echo "6. Keluar\n";
     echo "--------------------------------------\n";
     $pilihan = readline("Pilih Menu (1-6): ");
 
@@ -368,5 +375,5 @@ while (true) {
         default:
             echo "❌ Pilihan menu keliru!\n";
             jedaMenu();
-    }
+    }                                  
 }

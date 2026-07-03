@@ -2,14 +2,28 @@
     "buku": {
         "1": {
             "judul": "Atlas",
-            "stok": 1
+            "stok": 0
         }
     },
     "anggota": {
         "1": {
             "nama": "Rafka",
             "email": "rafka@gmail.com"
+        },
+        "2": {
+            "nama": "helgi",
+            "email": "helgi@gmail.com"
         }
     },
-    "peminjaman": []
+    "peminjaman": {
+        "PJM001": {
+            "ktp": "1",
+            "nama_peminjam": "Rafka",
+            "isbn": "1",
+            "judul_buku": "Atlas",
+            "tgl_pinjam": "2026-07-03",
+            "tgl_jatuh_tempo": "2026-07-23",
+            "status_kembali": "Dipinjam"
+        }
+    }
 }

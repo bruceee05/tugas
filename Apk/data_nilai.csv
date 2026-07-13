@@ -1,6 +1,7 @@
 No;Nama;MTK;IPA;IPS;Nilai Terbesar;Nilai Terkecil;Nilai Rata-Rata;Jumlah Nilai
-1;Rafka;98;78;66;98;66;80,67;242
-2;Helgi;67;89;78;89;67;78,00;234
+1;Rafka;95;96;97;97;95;96,00;288
+2;Helgi;91;86;56;91;56;77,67;233
+5;Jamal;98;76;61;98;61;78,33;235
 
 
 
@@ -13,8 +14,8 @@ No;Nama;MTK;IPA;IPS;Nilai Terbesar;Nilai Terkecil;Nilai Rata-Rata;Jumlah Nilai
 
 
 
-;tabel analisa
-;Nilai Terbesar;Nilai Terkecil;Nilai Rata-Rata;Jumlah Nilai
-MTK;98;67;82,50;165
-IPA;89;78;83,50;167
-IPS;78;66;72,00;144
+;tabel analisa;;;;
+;Mapel;Nilai Terbesar;Nilai Terkecil;Nilai Rata-Rata;Jumlah Nilai
+;MTK;98;91;94,67;284,00
+;IPA;96;76;86,00;258,00
+;IPS;97;56;71,33;214,00

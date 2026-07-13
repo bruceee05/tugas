@@ -6,6 +6,7 @@ function tekanEnterUntukLanjut() {
 }
 
 function validasiNoSiswa($no_siswa, $mode = "baru") {
+    $no_siswa = trim($no_siswa);
     if ($no_siswa === "") {
         return ["valid" => false, "pesan" => "Nomor siswa tidak boleh kosong."];
     }
@@ -19,7 +20,7 @@ function validasiNoSiswa($no_siswa, $mode = "baru") {
         $file_baca = fopen("data_siswa.csv", "r");
         while (($line = fgets($file_baca)) !== FALSE) {
             $data = explode(";", trim($line));
-            if (isset($data[0]) && $data[0] == $no_siswa) {
+            if (isset($data[0]) && trim($data[0]) == $no_siswa) {
                 $ada_di_file = true;
                 break;
             }
@@ -45,6 +46,7 @@ function validasiNoSiswa($no_siswa, $mode = "baru") {
 }
 
 function validasiNamaSiswa($nama_siswa) {
+    $nama_siswa = trim($nama_siswa);
     if ($nama_siswa === "") {
         return ["valid" => false, "pesan" => "Nama siswa tidak boleh kosong."];
     }
@@ -57,6 +59,7 @@ function validasiNamaSiswa($nama_siswa) {
 }
 
 function validasiNilai($nilai, $label) {
+    $nilai = trim($nilai);
     if ($nilai === "" || !is_numeric($nilai)) {
         return ["valid" => false, "pesan" => "$label harus berupa angka."];
     }
@@ -69,37 +72,47 @@ function validasiNilai($nilai, $label) {
     return ["valid" => true, "nilai" => $nilai_angka, "pesan" => ""];
 }
 
-// Fungsi pembantu khusus membaca baris data siswa mentah (abaikan header/jarak/analisa bawah)
+// Fungsi pembantu membaca database mentah nilai
 function bacaDataNilaiMentah() {
     if (!file_exists("data_nilai.csv")) return [];
     $mentah = [];
     $file = fopen("data_nilai.csv", "r");
-    $header = fgets($file); // Lewati header utama
-    
+
     while (($line = fgets($file)) !== FALSE) {
         $line = trim($line);
-        if ($line === "") continue;
-        $data = explode(";", $line);
         
-        // Cek kalau baris ini adalah bagian dari tabel analisa bawah, hentikan pembacaan data siswa
-        if (isset($data[0]) && ($data[0] === 'tabel analisa' || $data[0] === 'Mapel' || $data[0] === 'MTK' || $data[0] === 'IPA' || $data[0] === 'IPS' || $data[0] === '')) {
+        if ($line === "" || $line === ";" || strpos($line, "No;") !== false || strpos($line, "tabel analisa") !== false || strpos($line, "Mapel;") !== false) {
             continue;
         }
-        
-        if (count($data) >= 4 && is_numeric($data[0])) {
-            $mentah[] = $data;
+
+        $data = explode(";", $line);
+        $no_siswa = isset($data[0]) ? trim($data[0]) : '';
+
+        if (preg_match('/^[0-9]+$/', $no_siswa)) {
+            $base_index = count($data) >= 5 ? 2 : 1;
+            if (count($data) > $base_index + 2) {
+                $mtk = str_replace(',', '.', trim($data[$base_index]));
+                $ipa = str_replace(',', '.', trim($data[$base_index + 1]));
+                $ips = str_replace(',', '.', trim($data[$base_index + 2]));
+
+                $mentah[] = [
+                    $no_siswa,
+                    (float)$mtk,
+                    (float)$ipa,
+                    (float)$ips
+                ];
+            }
         }
     }
     fclose($file);
     return $mentah;
 }
 
-// Fungsi utama untuk menjalankan aplikasi terminal
 function jalankanAplikasi() {
     while (true) {
         echo "\n=== MENU APLIKASI RAPORT ===\n";
         echo "1. Input Data Siswa\n";
-        echo "2. Input Nilai\n";
+        echo "2. Input/Update Nilai\n";
         echo "3. Cetak Nilai Raport\n";
         echo "4. Analisa Tabel (UPDATE CSV & TERMINAL)\n";
         echo "5. Keluar\n";
@@ -158,14 +171,14 @@ function inputDataSiswa() {
         fwrite($file, "NO;NAMA\n");
     }
     
-    fwrite($file, $no_siswa . ";" . $nama_siswa . "\n");
+    fwrite($file, trim($no_siswa) . ";" . trim($nama_siswa) . "\n");
     fclose($file);
     echo "✅ Data siswa berhasil disimpan!\n";
 }
 
-// MENU 2: Input Nilai Mentah
+// MENU 2: Input/Update Nilai Mentah (URUTANNYA SEKARANG DIPERMANENKAN DI CSV)
 function inputNilaiSiswa() {
-    echo "\n--- INPUT NILAI SISWA ---\n";
+    echo "\n--- INPUT / UPDATE NILAI SISWA ---\n";
 
     while (true) {
         echo "Masukkan No Siswa: ";
@@ -177,13 +190,22 @@ function inputNilaiSiswa() {
         echo "❌ " . $hasil_no["pesan"] . "\n";
     }
 
-    // Ambil data nilai mentah yang sudah ada sebelumnya
     $data_lama = bacaDataNilaiMentah();
+    $index_ketemu = -1;
     
-    // Cek apakah nomor siswa ini sudah pernah diberi nilai
-    foreach ($data_lama as $d) {
+    foreach ($data_lama as $index => $d) {
         if ($d[0] == $no_siswa) {
-            echo "❌ Gagal: Nilai untuk No Siswa [$no_siswa] sudah diinput sebelumnya!\n";
+            $index_ketemu = $index;
+            break;
+        }
+    }
+
+    if ($index_ketemu != -1) {
+        echo "⚠️ Data nilai No Siswa [$no_siswa] sudah ada.\n";
+        echo "Apakah Anda ingin memperbarui/mengubah nilainya? (y/n): ";
+        $konfirmasi = strtolower(trim(fgets(STDIN)));
+        if ($konfirmasi !== 'y') {
+            echo "❌ Dibatalkan. Nilai lama tetap disimpan.\n";
             return;
         }
     }
@@ -221,18 +243,47 @@ function inputNilaiSiswa() {
         echo "❌ " . $hasil_ips["pesan"] . "\n";
     }
 
-    // Masukkan ke array data lama untuk ditulis ulang rapi
-    $data_lama[] = [$no_siswa, $mtk, $ipa, $ips];
+    if ($index_ketemu != -1) {
+        $data_lama[$index_ketemu] = [$no_siswa, $mtk, $ipa, $ips];
+        $pesan_sukses = "✅ Data nilai berhasil DIPERBARUI ke data_nilai.csv!";
+    } else {
+        $data_lama[] = [$no_siswa, $mtk, $ipa, $ips];
+        $pesan_sukses = "✅ Data nilai berhasil disimpan ke data_nilai.csv!";
+    }
 
-    // Tulis ulang struktur atas tabel siswa mentah secara aman
+    // 🔥 KUNCI UTAMA: Urutkan dulu isi array $data_lama sebelum ditulis ulang ke CSV!
+    usort($data_lama, function($a, $b) {
+        return (int)$a[0] <=> (int)$b[0];
+    });
+
+    $nama_siswa_map = [];
+    if (file_exists("data_siswa.csv")) {
+        $file_siswa = fopen("data_siswa.csv", "r");
+        fgets($file_siswa); 
+        while (($line = fgets($file_siswa)) !== FALSE) {
+            $data = explode(";", trim($line));
+            if (count($data) >= 2) {
+                $nama_siswa_map[trim($data[0])] = trim($data[1]);
+            }
+        }
+        fclose($file_siswa);
+    }
+
     $file = fopen("data_nilai.csv", "w");
-    fwrite($file, "No;MTK;IPA;IPS\n"); 
+    fwrite($file, "No;Nama;MTK;IPA;IPS;Nilai Terbesar;Nilai Terkecil;Nilai Rata-Rata;Jumlah Nilai\n"); 
+    
     foreach ($data_lama as $d) {
-        fwrite($file, $d[0] . ";" . $d[1] . ";" . $d[2] . ";" . $d[3] . "\n");
+        $sNo = trim($d[0]);
+        $sNama = isset($nama_siswa_map[$sNo]) ? $nama_siswa_map[$sNo] : "Siswa " . $sNo;
+        $fix_mtk = (float)$d[1];
+        $fix_ipa = (float)$d[2];
+        $fix_ips = (float)$d[3];
+        
+        fwrite($file, "$sNo;$sNama;$fix_mtk;$fix_ipa;$fix_ips;;;;\n");
     }
     fclose($file);
 
-    echo "✅ Data nilai berhasil disimpan ke data_nilai.csv!\n";
+    echo $pesan_sukses . "\n";
     echo "⚠️ Catatan: Silakan jalankan Menu 4 untuk menyinkronkan kalkulasi baris dan tabel analisa bawah.\n";
 }
 
@@ -250,8 +301,8 @@ function cetakRaportSiswa() {
         $file_siswa = fopen("data_siswa.csv", "r");
         while (($line = fgets($file_siswa)) !== FALSE) {
             $data = explode(";", trim($line));
-            if (isset($data[0]) && $data[0] == $cari_no) {
-                $nama_siswa = $data[1];
+            if (isset($data[0]) && trim($data[0]) == $cari_no) {
+                $nama_siswa = trim($data[1]);
                 break;
             }
         }
@@ -261,9 +312,9 @@ function cetakRaportSiswa() {
     $daftar_nilai = bacaDataNilaiMentah();
     foreach ($daftar_nilai as $d) {
         if ($d[0] == $cari_no) {
-            $mtk = (int)$d[1];
-            $ipa = (int)$d[2];
-            $ips = (int)$d[3];
+            $mtk = (float)$d[1];
+            $ipa = (float)$d[2];
+            $ips = (float)$d[3];
             $nilai_ditemukan = true;
             break;
         }
@@ -278,7 +329,7 @@ function cetakRaportSiswa() {
     $terbesar   = max($nilai_array);
     $terkecil   = min($nilai_array);
     $jumlah     = array_sum($nilai_array);
-    $rata_rata  = number_format($jumlah / count($nilai_array), 2);
+    $rata_rata  = number_format($jumlah / count($nilai_array), 2, ',', '');
 
     echo "\n=========================================\n";
     echo "RAPORT HASIL BELAJAR SISWA\n";
@@ -298,7 +349,7 @@ function cetakRaportSiswa() {
     echo "=========================================\n";
 }
 
-// MENU 4: Analisa Tabel (Satu File Gabung Nilai, Kasih 12 Jarak Baris Kosong + Print Terminal)
+// MENU 4: Analisa Tabel (DIJAMIN TETAP TERURUT DAN FORMAT KELUARAN AMAN)
 function analisaTabelMapel() {
     $daftar_nilai = bacaDataNilaiMentah();
 
@@ -307,24 +358,25 @@ function analisaTabelMapel() {
         return;
     }
 
-    // Ambil Nama Siswa mapping dari data_siswa.csv
+    // Urutkan array berdasarkan nomor siswa terkecil ke terbesar
+    usort($daftar_nilai, function($a, $b) {
+        return (int)$a[0] <=> (int)$b[0];
+    });
+
     $nama_siswa_map = [];
     if (file_exists("data_siswa.csv")) {
         $file_siswa = fopen("data_siswa.csv", "r");
-        fgets($file_siswa); // Skip header siswa
+        fgets($file_siswa); 
         while (($line = fgets($file_siswa)) !== FALSE) {
             $data = explode(";", trim($line));
             if (count($data) >= 2) {
-                $nama_siswa_map[$data[0]] = $data[1];
+                $nama_siswa_map[trim($data[0])] = trim($data[1]);
             }
         }
         fclose($file_siswa);
     }
 
-    // Tulis ulang file data_nilai.csv dari atas (Tabel Siswa Lengkap)
     $file = fopen("data_nilai.csv", "w");
-    
-    // Header Atas
     fwrite($file, "No;Nama;MTK;IPA;IPS;Nilai Terbesar;Nilai Terkecil;Nilai Rata-Rata;Jumlah Nilai\n");
 
     $all_mtk = []; $all_ipa = []; $all_ips = [];
@@ -332,7 +384,7 @@ function analisaTabelMapel() {
     foreach ($daftar_nilai as $d) {
         $sNo = $d[0];
         $sNama = isset($nama_siswa_map[$sNo]) ? $nama_siswa_map[$sNo] : "Siswa " . $sNo;
-        $vMtk = (int)$d[1]; $vIpa = (int)$d[2]; $vIps = (int)$d[3];
+        $vMtk = (float)$d[1]; $vIpa = (float)$d[2]; $vIps = (float)$d[3];
 
         $all_mtk[] = $vMtk; $all_ipa[] = $vIpa; $all_ips[] = $vIps;
 
@@ -341,21 +393,18 @@ function analisaTabelMapel() {
         $sTotal = $vMtk + $vIpa + $vIps;
         $sRata = number_format($sTotal / 3, 2, ',', '');
 
-        // Tulis baris siswa lengkap kalkulasi ke samping
         fwrite($file, "$sNo;$sNama;$vMtk;$vIpa;$vIps;$sMax;$sMin;$sRata;$sTotal\n");
     }
 
-    // --- KASIH JARAK JAUH KE BAWAH DI EXCEL (12 Baris Kosong Jeda) ---
     fwrite($file, str_repeat("\n", 12));
 
-    // Hitung Analisa Tiap Mapel (Vertikal)
     $hitung_stats = function($mapel_array) {
         $jml = array_sum($mapel_array);
         return [
             'max' => max($mapel_array),
             'min' => min($mapel_array),
             'avg' => number_format($jml / count($mapel_array), 2, ',', ''),
-            'sum' => $jml
+            'sum' => number_format($jml, 2, ',', '')
         ];
     };
 
@@ -363,29 +412,26 @@ function analisaTabelMapel() {
     $stats_ipa = $hitung_stats($all_ipa);
     $stats_ips = $hitung_stats($all_ips);
 
-    // Tulis Tabel Analisa Kotak Bawah di dalam file CSV yang sama
-    fwrite($file, ";tabel analisa\n");
-    fwrite($file, ";Nilai Terbesar;Nilai Terkecil;Nilai Rata-Rata;Jumlah Nilai\n");
-    fwrite($file, "MTK;{$stats_mtk['max']};{$stats_mtk['min']};{$stats_mtk['avg']};{$stats_mtk['sum']}\n");
-    fwrite($file, "IPA;{$stats_ipa['max']};{$stats_ipa['min']};{$stats_ipa['avg']};{$stats_ipa['sum']}\n");
-    fwrite($file, "IPS;{$stats_ips['max']};{$stats_ips['min']};{$stats_ips['avg']};{$stats_ips['sum']}\n");
+    fwrite($file, ";tabel analisa;;;;\n");
+    fwrite($file, ";Mapel;Nilai Terbesar;Nilai Terkecil;Nilai Rata-Rata;Jumlah Nilai\n");
+    fwrite($file, ";MTK;{$stats_mtk['max']};{$stats_mtk['min']};{$stats_mtk['avg']};{$stats_mtk['sum']}\n");
+    fwrite($file, ";IPA;{$stats_ipa['max']};{$stats_ipa['min']};{$stats_ipa['avg']};{$stats_ipa['sum']}\n");
+    fwrite($file, ";IPS;{$stats_ips['max']};{$stats_ips['min']};{$stats_ips['avg']};{$stats_ips['sum']}\n");
 
     fclose($file);
-    echo "\n📊 [SISTEM] Sukses! File data_nilai.csv berhasil diperbarui dengan jarak renggang.\n";
+    echo "\n📊 [SISTEM] Sukses! File data_nilai.csv berhasil diperbarui.\n";
 
-    // MUNCULKAN JUGA TABEL ANALISANYA DI TERMINAL BIAR KELIHATAN
     echo "\n=========================================================================\n";
     echo "                        TABEL ANALISA MATA PELAJARAN                     \n";
     echo "=========================================================================\n";
     echo sprintf("| %-7s | %-14s | %-14s | %-15s | %-12s |\n", "MAPEL", "Nilai Terbesar", "Nilai Terkecil", "Nilai Rata-Rata", "Jumlah Nilai");
     echo "-------------------------------------------------------------------------\n";
-    echo sprintf("| %-7s | %-14d | %-14d | %-15s | %-12d |\n", "MTK", $stats_mtk['max'], $stats_mtk['min'], $stats_mtk['avg'], $stats_mtk['sum']);
+    echo sprintf("| %-7s | %-14d | %-14d | %-15s | %-12s |\n", "MTK", $stats_mtk['max'], $stats_mtk['min'], $stats_mtk['avg'], $stats_mtk['sum']);
     echo "-------------------------------------------------------------------------\n";
-    echo sprintf("| %-7s | %-14d | %-14d | %-15s | %-12d |\n", "IPA", $stats_ipa['max'], $stats_ipa['min'], $stats_ipa['avg'], $stats_ipa['sum']);
+    echo sprintf("| %-7s | %-14d | %-14d | %-15s | %-12s |\n", "IPA", $stats_ipa['max'], $stats_ipa['min'], $stats_ipa['avg'], $stats_ipa['sum']);
     echo "-------------------------------------------------------------------------\n";
-    echo sprintf("| %-7s | %-14d | %-14d | %-15s | %-12d |\n", "IPS", $stats_ips['max'], $stats_ips['min'], $stats_ips['avg'], $stats_ips['sum']);
+    echo sprintf("| %-7s | %-14d | %-14d | %-15s | %-12s |\n", "IPS", $stats_ips['max'], $stats_ips['min'], $stats_ips['avg'], $stats_ips['sum']);
     echo "=========================================================================\n";
 }
 
-// Jalankan aplikasinya
 jalankanAplikasi();

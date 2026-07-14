@@ -65,14 +65,13 @@ function validasiNilai($nilai, $label) {
     }
 
     $nilai_angka = (float)$nilai;
-    if ($nilai_angka < 0 || $nilai_angka > 100) {
+    if ($nilai_angka < 0 || $nilai_angka > 100) { 
         return ["valid" => false, "pesan" => "$label tidak boleh kurang dari 0 atau lebih dari 100."];
     }
 
     return ["valid" => true, "nilai" => $nilai_angka, "pesan" => ""];
 }
 
-// Fungsi pembantu membaca database mentah nilai
 function bacaDataNilaiMentah() {
     if (!file_exists("data_nilai.csv")) return [];
     $mentah = [];
@@ -108,15 +107,76 @@ function bacaDataNilaiMentah() {
     return $mentah;
 }
 
+// ======================== FUNGSI RANKING BARU ========================
+function tampilkanRankingSiswa() {
+    $daftar_nilai = bacaDataNilaiMentah();
+
+    if (empty($daftar_nilai)) {
+        echo "\n❌ Belum ada data nilai. Silakan input nilai di Menu 2 terlebih dahulu.\n";
+        return;
+    }
+
+    // Ambil map nama siswa dari data_siswa.csv
+    $nama_siswa_map = [];
+    if (file_exists("data_siswa.csv")) {
+        $file_siswa = fopen("data_siswa.csv", "r");
+        fgets($file_siswa); 
+        while (($line = fgets($file_siswa)) !== FALSE) {
+            $data = explode(";", trim($line));
+            if (count($data) >= 2) {
+                $nama_siswa_map[trim($data[0])] = trim($data[1]);
+            }
+        }
+        fclose($file_siswa);
+    }
+
+    // Hitung total nilai masing-masing siswa untuk dijadikan patokan ranking
+    $data_ranking = [];
+    foreach ($daftar_nilai as $d) {
+        $no_siswa = $d[0];
+        $nama = isset($nama_siswa_map[$no_siswa]) ? $nama_siswa_map[$no_siswa] : "Siswa " . $no_siswa;
+        $total_nilai = $d[1] + $d[2] + $d[3]; // MTK + IPA + IPS
+        $rata_rata = $total_nilai / 3;
+
+        $data_ranking[] = [
+            'no' => $no_siswa,
+            'nama' => $nama,
+            'total' => $total_nilai,
+            'rata' => number_format($rata_rata, 2, ',', '')
+        ];
+    }
+
+    // KUNCI RANKING: Urutkan data dari TOTAL NILAI terbesar ($b) ke terkecil ($a)
+    usort($data_ranking, function($a, $b) {
+        return $b['total'] <=> $a['total'];
+    });
+
+    // Tampilkan ke layar
+    echo "\n=========================================================================\n";
+    echo "                      PENGUMUMAN RANKING NILAI SISWA                     \n";
+    echo "=========================================================================\n";
+    echo sprintf("| %-7s | %-20s | %-12s | %-12s |\n", "RANK", "NAMA SISWA", "TOTAL NILAI", "RATA-RATA");
+    echo "-------------------------------------------------------------------------\n";
+    
+    $rank = 1;
+    foreach ($data_ranking as $row) {
+        echo sprintf("| %-7d | %-20s | %-12.2f | %-12s |\n", $rank, $row['nama'], $row['total'], $row['rata']);
+        echo "-------------------------------------------------------------------------\n";
+        $rank++;
+    }
+    echo "=========================================================================\n";
+}
+
 function jalankanAplikasi() {
     while (true) {
         echo "\n=== MENU APLIKASI RAPORT ===\n";
         echo "1. Input Data Siswa\n";
         echo "2. Input/Update Nilai\n";
         echo "3. Cetak Nilai Raport\n";
-        echo "4. Analisa Tabel (UPDATE CSV & TERMINAL)\n";
-        echo "5. Keluar\n";
-        echo "Pilih menu (1-5): ";
+        echo "4. Analisa Tabel\n";
+        echo "5. Lihat Ranking Siswa\n"; // Menu Baru lo
+        echo "6. Keluar\n";
+        echo "Pilih menu (1-6): ";
         
         $pilihan = trim(fgets(STDIN));
 
@@ -129,13 +189,15 @@ function jalankanAplikasi() {
         } elseif ($pilihan == '4') {
             analisaTabelMapel();
         } elseif ($pilihan == '5') {
+            tampilkanRankingSiswa(); // Panggil fungsi ranking di sini
+        } elseif ($pilihan == '6') {
             echo "Terima kasih! Aplikasi keluar.\n";
             break;
         } else {
             echo "Pilihan tidak valid, coba lagi.\n";
         }
 
-        if ($pilihan != '5') {
+        if ($pilihan != '6') {
             tekanEnterUntukLanjut();
         }
     }
@@ -176,7 +238,7 @@ function inputDataSiswa() {
     echo "✅ Data siswa berhasil disimpan!\n";
 }
 
-// MENU 2: Input/Update Nilai Mentah (URUTANNYA SEKARANG DIPERMANENKAN DI CSV)
+// MENU 2: Input/Update Nilai Mentah
 function inputNilaiSiswa() {
     echo "\n--- INPUT / UPDATE NILAI SISWA ---\n";
 
@@ -251,12 +313,11 @@ function inputNilaiSiswa() {
         $pesan_sukses = "✅ Data nilai berhasil disimpan ke data_nilai.csv!";
     }
 
-    // 🔥 KUNCI UTAMA: Urutkan dulu isi array $data_lama sebelum ditulis ulang ke CSV!
-    usort($data_lama, function($a, $b) {
+    usort($data_lama, function($a, $b) { 
         return (int)$a[0] <=> (int)$b[0];
     });
 
-    $nama_siswa_map = [];
+    $nama_siswa_map = []; 
     if (file_exists("data_siswa.csv")) {
         $file_siswa = fopen("data_siswa.csv", "r");
         fgets($file_siswa); 
@@ -321,7 +382,7 @@ function cetakRaportSiswa() {
     }
 
     if (!$nilai_ditemukan) {
-        echo "❌ Maaf, No Siswa [$cari_no] nilainya belum diinput di Menu 2.\n";
+        echo "❌ Maaf, No Siswa [$cari_no] nilainya belum diinput.\n";
         return;
     }
 
@@ -349,7 +410,7 @@ function cetakRaportSiswa() {
     echo "=========================================\n";
 }
 
-// MENU 4: Analisa Tabel (DIJAMIN TETAP TERURUT DAN FORMAT KELUARAN AMAN)
+// MENU 4: Analisa Tabel
 function analisaTabelMapel() {
     $daftar_nilai = bacaDataNilaiMentah();
 
@@ -358,7 +419,6 @@ function analisaTabelMapel() {
         return;
     }
 
-    // Urutkan array berdasarkan nomor siswa terkecil ke terbesar
     usort($daftar_nilai, function($a, $b) {
         return (int)$a[0] <=> (int)$b[0];
     });
@@ -403,7 +463,7 @@ function analisaTabelMapel() {
         return [
             'max' => max($mapel_array),
             'min' => min($mapel_array),
-            'avg' => number_format($jml / count($mapel_array), 2, ',', ''),
+            'avg' => number_format($jml / count($mapel_array), 2, ',', ''),//count untuk rata-rata
             'sum' => number_format($jml, 2, ',', '')
         ];
     };

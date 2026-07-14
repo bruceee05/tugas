@@ -63,7 +63,7 @@ function tambahBuku()
         return;
     }
 
-    $judul = readline("Masukkan Judul Buku: ");
+    $judul = readline("Masukkan Judul Buku: ");//readline digunakan untuk membaca inputan dari user
     $db['buku'][$isbn] = ["judul" => $judul, "stok" => 1];//associative array untuk menyimpan data buku baru dengan ISBN sebagai key dan judul serta stok sebagai value
 
     saveDatabase($db);

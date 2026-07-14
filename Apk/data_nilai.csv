@@ -1,21 +1,9 @@
 No;Nama;MTK;IPA;IPS;Nilai Terbesar;Nilai Terkecil;Nilai Rata-Rata;Jumlah Nilai
-1;Rafka;95;96;97;97;95;96,00;288
-2;Helgi;91;86;56;91;56;77,67;233
-5;Jamal;98;76;61;98;61;78,33;235
-
-
-
-
-
-
-
-
-
-
-
-
-;tabel analisa;;;;
-;Mapel;Nilai Terbesar;Nilai Terkecil;Nilai Rata-Rata;Jumlah Nilai
-;MTK;98;91;94,67;284,00
-;IPA;96;76;86,00;258,00
-;IPS;97;56;71,33;214,00
+1;Rafka;97;95;93;;;;
+2;Helgi;91;86;56;;;;
+3;Agus;100;98;94;;;;
+4;Salim;56;73;54;;;;
+5;Jamal;98;76;61;;;;
+6;Kaka;77;82;85;;;;
+9;helgi;95;77;80;;;;
+10;kk;100;100;100;;;;
